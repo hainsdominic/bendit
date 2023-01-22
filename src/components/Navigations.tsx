@@ -18,9 +18,15 @@ const useStyles = makeStyles({
     },
 });
 
-const Navigations = () => {
+//types for the props
+type Props = {
+    value: number;
+    setValue: (value: number) => void;
+};
+
+const Navigations = ({ value, setValue }: Props) => {
     const classes = useStyles();
-    const [value, setValue] = useState(0);
+
     return (
         <Box className={classes.root}>
             <BottomNavigation
