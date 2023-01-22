@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import Navigations from './components/Navigations';
+import SendFile from './components/send/SendFile';
 
 function App() {
     const [value, setValue] = useState(0);
 
     const ShowPages = () => {
         if (value === 0) {
-            return <h1> send</h1>;
+            return <SendFile />;
         } else if (value === 1) {
             return <h1> receive</h1>;
         } else if (value === 2) {
@@ -18,7 +19,9 @@ function App() {
     return (
         <div>
             <ShowPages />
-            <Navigations value={value} setValue={setValue} />
+            <div>
+                <Navigations value={value} setValue={setValue} />
+            </div>
         </div>
     );
 }

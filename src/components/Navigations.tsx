@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { makeStyles } from '@mui/styles';
-import Box from '@mui/material/Box';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
-import RestoreIcon from '@mui/icons-material/Restore';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SendIcon from '@mui/icons-material/Send';
+import CallReceivedIcon from '@mui/icons-material/CallReceived';
+import ExploreIcon from '@mui/icons-material/Explore';
 
 const useStyles = makeStyles({
     root: {
@@ -28,7 +27,7 @@ const Navigations = ({ value, setValue }: Props) => {
     const classes = useStyles();
 
     return (
-        <Box className={classes.root}>
+        <div className={classes.root}>
             <BottomNavigation
                 showLabels
                 value={value}
@@ -38,21 +37,21 @@ const Navigations = ({ value, setValue }: Props) => {
             >
                 <BottomNavigationAction
                     label='Send'
-                    icon={<RestoreIcon />}
+                    icon={<SendIcon />}
                     className={classes.navAction}
                 />
                 <BottomNavigationAction
                     label='Receive'
-                    icon={<FavoriteIcon />}
+                    icon={<CallReceivedIcon />}
                     className={classes.navAction}
                 />
                 <BottomNavigationAction
                     label='Explorer'
-                    icon={<LocationOnIcon />}
+                    icon={<ExploreIcon />}
                     className={classes.navAction}
                 />
             </BottomNavigation>
-        </Box>
+        </div>
     );
 };
 
