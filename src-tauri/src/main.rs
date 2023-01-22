@@ -3,25 +3,30 @@
     windows_subsystem = "windows"
 )]
 
-use std::thread;
-use std::net::{TcpListener};
-use std::{
-    io::{Read, Write},
-    net::TcpStream, path::Path, fs,
-};
-use std::fs::File;
 use base64::{self, Engine};
+use std::fs::File;
+use std::net::TcpListener;
+use std::thread;
+use std::{
+    fs,
+    io::{Read, Write},
+    net::TcpStream,
+    path::Path,
+};
 
 const NODE_IP: &str = "localhost:5000";
-
 
 fn main() {
     preload();
     tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![get_recipient_ip, get_blocks, send_file])
+        .invoke_handler(tauri::generate_handler![
+            get_recipient_ip,
+            get_blocks,
+            send_file
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-    
+
     let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
 
     thread::spawn(move || {
@@ -61,7 +66,7 @@ fn send_command(command: &str) -> String {
 
 fn get_public_key() -> String {
     let path = Path::new("asset/public.key");
-    let public_key = fs::read_to_string(path).unwrap();
+    let public_key = fs::read_to_string(path).unwrap_or("".to_string());
     public_key
 }
 
@@ -83,8 +88,7 @@ fn file_reception_loop(mut stream: TcpStream) {
 
     // Get the file name from the client
     stream.read(&mut buffer).unwrap();
-    
-    
+
     let file_name = String::from_utf8_lossy(&buffer).trim().to_string();
 
     // Open a file with the same name
@@ -106,14 +110,12 @@ fn send_file(ip: String, fileBuffer: &str) {
     println!("{}", fileBuffer);
 }
 
-
 // fn generate_keypair() -> (Vec<u8>, Vec<u8>) {
 //     let key = Rsa::generate(2048).unwrap();
 //     let private_key = key.private_key_to_pem().unwrap();
 //     let public_key = key.public_key_to_pem().unwrap();
 //     (public_key, private_key)
 // }
-
 
 // call a tcp server
 #[tauri::command]
