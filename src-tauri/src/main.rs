@@ -5,18 +5,23 @@
 
 use std::{
     io::{Read, Write},
-    net::TcpStream,
+    net::TcpStream, path::Path, fs,
 };
 
 const NODE_IP: &str = "localhost:5000";
 
 
 fn main() {
+    preload();
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_reciepient_ip])
-        .invoke_handler(tauri::generate_handler![get_blocks])
+    .invoke_handler(tauri::generate_handler![get_recipient_ip, get_blocks])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn preload() {
+    let command = "add_peer ".to_string() + &get_public_key();
+    send_command(&command);
 }
 
 fn send_command(command: &str) -> String {
@@ -28,16 +33,20 @@ fn send_command(command: &str) -> String {
 }
 
 // fn get_private_key() -> String {
-//     let path = Path::new("private.key");
+//     let path = Path::new("../asset/private.key");
 //     let private_key = fs::read_to_string(path).unwrap();
 //     private_key
 // }
 
-// fn get_public_key() -> String {
-//     let path = Path::new("public.key");
-//     let public_key = fs::read_to_string(path).unwrap();
-//     public_key
-// }
+fn get_public_key() -> String {
+    let path = Path::new("asset/public.key");
+    let public_key = fs::read_to_string(path).unwrap();
+    public_key
+}
+
+//send a React File object to the server
+// #[tauri::command]
+// fn send_file(ip: String, 
 
 
 // fn generate_keypair() -> (Vec<u8>, Vec<u8>) {
@@ -50,8 +59,8 @@ fn send_command(command: &str) -> String {
 
 // call a tcp server
 #[tauri::command]
-fn get_reciepient_ip(public_key: &str) -> String {
-    let message = "get_peer ".to_string() + public_key;
+fn get_recipient_ip(public_key: String) -> String {
+    let message = "get_peer ".to_string() + &public_key;
     send_command(&message)
 }
 
