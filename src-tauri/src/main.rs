@@ -68,38 +68,18 @@ fn get_public_key() -> String {
 }
 
 fn file_reception_loop(mut stream: TcpStream) {
-    let mut buffer = [0; 512];
-    let mut client_public_key = vec![];
+    let mut buffer = [0; 2_000_000];
 
     // Get the public key from the client
-    while let Ok(bytes_read) = stream.read(&mut buffer) {
-        if bytes_read == 0 {
-            break;
-        }
-        client_public_key.extend_from_slice(&buffer[..bytes_read]);
-        if client_public_key.ends_with(b"\n") {
-            break;
-        }
-    }
+    let mut client_public_key_str = String::new();
+    stream.read_to_string(&mut client_public_key_str).expect("Error reading public client key");
 
-    let client_public_key_str = match String::from_utf8(client_public_key) {
-        Ok(key) => key,
-        Err(e) => {
-            println!("Error decoding client public key: {}", e);
-            return;
-        }
-    };
+    println!("Client public key: {}", &client_public_key_str);
 
-    println!("Client public key: {}", client_public_key_str);
+    let mut file_name = String::new();
+    stream.read_to_string(&mut file_name).expect("Error reading file name");
+    file_name = file_name.trim().to_string();
 
-    let file_name: String = match String::from_utf8((&buffer).to_vec()).map(|s| s.trim().to_string()) {
-        Ok(file) => file,
-        Err(e) => {
-            println!("Error decoding file name: {}", e);
-            return;
-        }
-    };
-    
     let mut file = match File::create(file_name) {
         Ok(file) => file,
         Err(e) => {
@@ -125,8 +105,9 @@ fn file_reception_loop(mut stream: TcpStream) {
     println!("File has been received.");
 }
 
+
 #[tauri::command]
-fn send_file(ip: String, file_buffer: String, file_name: String) {
+fn send_file(ip: String, file_buffer: Vec<u8>, file_name: String) {
     println!("{}", &ip);
     let mut stream = match TcpStream::connect("localhost:8080") {
         Ok(stream) => stream,
@@ -145,7 +126,6 @@ fn send_file(ip: String, file_buffer: String, file_name: String) {
         }
     }
     println!("File name");
-    stream.write("\0".as_bytes()).unwrap();
     match stream.write(file_name.as_bytes()) {
         Ok(_) => (),
         Err(e) => {
@@ -153,16 +133,14 @@ fn send_file(ip: String, file_buffer: String, file_name: String) {
             return;
         }
     }
-    stream.write("\0".as_bytes()).unwrap();
     println!("File buffer");
-    match stream.write(file_buffer.as_bytes()) {
+    match stream.write(&file_buffer) {
         Ok(_) => (),
         Err(e) => {
             println!("Error sending file buffer: {}", e);
             return;
         }
     }
-    stream.write("\0".as_bytes()).unwrap();
     println!("File has been sent.");
 }
 

@@ -62,12 +62,11 @@ const SendFile = () => {
                     reader.onloadend = () => {
                         const arrayBuffer = reader.result;
                         console.log(arrayBuffer);
+                        console.log(typeof arrayBuffer);
                         invoke('send_file', {
                             ip: ip,
-                            fileBuffer: JSON.stringify(
-                                Array.from(
-                                    new Uint8Array(arrayBuffer as ArrayBuffer)
-                                )
+                            fileBuffer: Array.from(
+                                new Uint8Array(arrayBuffer as ArrayBuffer)
                             ),
                             fileName: (file as File).name,
                         });
