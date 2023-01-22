@@ -3,21 +3,22 @@
     windows_subsystem = "windows"
 )]
 
-use std::thread;
-use std::net::{TcpListener};
-use std::{
-    io::{Read, Write},
-    net::TcpStream, path::Path, fs,
-};
 use std::fs::File;
+use std::net::TcpListener;
+use std::thread;
+use std::{
+    fs,
+    io::{Read, Write},
+    net::TcpStream,
+    path::Path,
+};
 
 const NODE_IP: &str = "localhost:5000";
-
 
 fn main() {
     println!("Listening for incoming connections...");
 
-    let listener = TcpListener::bind("localhost:5060").unwrap();
+    let listener = TcpListener::bind("localhost:8080").unwrap();
 
     thread::spawn(move || {
         for stream in listener.incoming() {
@@ -62,7 +63,7 @@ fn send_command(command: &str) -> String {
 
 fn get_public_key() -> String {
     let path = Path::new("asset/public.key");
-    let public_key = fs::read_to_string(path).unwrap();
+    let public_key = fs::read_to_string(path).unwrap_or("".to_string());
     public_key
 }
 
@@ -127,7 +128,7 @@ fn file_reception_loop(mut stream: TcpStream) {
 #[tauri::command]
 fn send_file(ip: String, file_buffer: String, file_name: String) {
     println!("{}", &ip);
-    let mut stream = match TcpStream::connect(ip) {
+    let mut stream = match TcpStream::connect("localhost:8080") {
         Ok(stream) => stream,
         Err(e) => {
             println!("Error connecting to server: {}", e);
