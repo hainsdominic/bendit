@@ -54,19 +54,22 @@ const SendFile = () => {
             setError(true);
             setHelperText('Please enter a public key');
         } else {
-            // Send file and public key to TCP/IP server
-            // Example code for sending file to server using fetch API
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('publicKey', publicKey);
-            invoke('get_reciepient_ip', { publicKey: publicKey }).then(
-                (res) => {
-                    console.log(res);
+            let ip: string;
+            invoke('get_recipient_ip', { publicKey: publicKey }).then(
+                (res: any) => {
+                    ip = res;
                 }
             );
-            // invoke('send_file', { file: file, publicKey: publicKey }).then((res) => {
-            //     console.log(res);
-            // });
+            const reader = new FileReader();
+            reader.onload = () => {
+                reader.readAsArrayBuffer(file);
+                const arrayBuffer = reader.result;
+                console.log(arrayBuffer);
+                invoke('send_file', {
+                    ip: ip,
+                    file: arrayBuffer,
+                });
+            };
         }
     };
 
