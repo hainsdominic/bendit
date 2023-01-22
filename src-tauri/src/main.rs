@@ -10,22 +10,16 @@ use std::{
     net::TcpStream, path::Path, fs,
 };
 use std::fs::File;
-use base64::{self, Engine};
 
 const NODE_IP: &str = "localhost:5000";
 
 
 fn main() {
-    preload();
-    tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![get_recipient_ip, get_blocks, send_file])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-    
+    println!("Listening for incoming connections...");
+
     let listener = TcpListener::bind("localhost:5060").unwrap();
 
     thread::spawn(move || {
-        println!("Listening for incoming connections...");
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {
@@ -39,6 +33,12 @@ fn main() {
             }
         }
     });
+
+    preload();
+    tauri::Builder::default()
+    .invoke_handler(tauri::generate_handler![get_recipient_ip, get_blocks, send_file])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
 
 fn preload() {
@@ -80,23 +80,45 @@ fn file_reception_loop(mut stream: TcpStream) {
             break;
         }
     }
-    let client_public_key_str = String::from_utf8(client_public_key).unwrap();
 
-    // Get the file name from the client
-    stream.read(&mut buffer).unwrap();
-    
-    
-    let file_name = String::from_utf8_lossy(&buffer).trim().to_string();
+    let client_public_key_str = match String::from_utf8(client_public_key) {
+        Ok(key) => key,
+        Err(e) => {
+            println!("Error decoding client public key: {}", e);
+            return;
+        }
+    };
 
-    // Open a file with the same name
-    let mut file = File::create(file_name).unwrap();
+    println!("Client public key: {}", client_public_key_str);
+
+    let file_name: String = match String::from_utf8((&buffer).to_vec()).map(|s| s.trim().to_string()) {
+        Ok(file) => file,
+        Err(e) => {
+            println!("Error decoding file name: {}", e);
+            return;
+        }
+    };
+    
+    let mut file = match File::create(file_name) {
+        Ok(file) => file,
+        Err(e) => {
+            println!("Error creating file: {}", e);
+            return;
+        }
+    };
 
     // Read file data from the client and write it to the file
     while let Ok(bytes_read) = stream.read(&mut buffer) {
         if bytes_read == 0 {
             break;
         }
-        file.write_all(&buffer[..bytes_read]).unwrap();
+        match file.write_all(&buffer[..bytes_read]) {
+            Ok(_) => (),
+            Err(e) => {
+                println!("Error writing to file: {}", e);
+                return;
+            }
+        }
     }
 
     println!("File has been received.");
@@ -105,24 +127,43 @@ fn file_reception_loop(mut stream: TcpStream) {
 #[tauri::command]
 fn send_file(ip: String, file_buffer: String, file_name: String) {
     println!("{}", &ip);
-    let mut stream = TcpStream::connect("localhost:5060").unwrap();
+    let mut stream = match TcpStream::connect(ip) {
+        Ok(stream) => stream,
+        Err(e) => {
+            println!("Error connecting to server: {}", e);
+            return;
+        }
+    };    
     let public_key = get_public_key();
     println!("Public key");
-    stream.write(public_key.as_bytes()).unwrap();
+    match stream.write(public_key.as_bytes()) {
+        Ok(_) => (),
+        Err(e) => {
+            println!("Error sending public key: {}", e);
+            return;
+        }
+    }
     println!("File name");
-    stream.write(file_name.as_bytes()).unwrap();
+    stream.write("\0".as_bytes()).unwrap();
+    match stream.write(file_name.as_bytes()) {
+        Ok(_) => (),
+        Err(e) => {
+            println!("Error sending file name: {}", e);
+            return;
+        }
+    }
+    stream.write("\0".as_bytes()).unwrap();
     println!("File buffer");
-    stream.write(file_buffer.as_bytes()).unwrap();
+    match stream.write(file_buffer.as_bytes()) {
+        Ok(_) => (),
+        Err(e) => {
+            println!("Error sending file buffer: {}", e);
+            return;
+        }
+    }
+    stream.write("\0".as_bytes()).unwrap();
     println!("File has been sent.");
 }
-
-
-// fn generate_keypair() -> (Vec<u8>, Vec<u8>) {
-//     let key = Rsa::generate(2048).unwrap();
-//     let private_key = key.private_key_to_pem().unwrap();
-//     let public_key = key.public_key_to_pem().unwrap();
-//     (public_key, private_key)
-// }
 
 
 // call a tcp server
