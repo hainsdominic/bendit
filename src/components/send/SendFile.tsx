@@ -59,32 +59,14 @@ const SendFile = () => {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('publicKey', publicKey);
-            // invoke('get_reciepient_ip', { publicKey: publicKey }).then(
-            //     (res) => {
-            //         console.log(res);
-            //     }
-            // );
+            invoke('get_reciepient_ip', { publicKey: publicKey }).then(
+                (res) => {
+                    console.log(res);
+                }
+            );
             // invoke('send_file', { file: file, publicKey: publicKey }).then((res) => {
             //     console.log(res);
             // });
-            // fetch('<server-url>', {
-            //     method: 'POST',
-            //     body: formData,
-            // })
-            //     .then((response) => {
-            //         if (!response.ok) {
-            //             throw Error(response.statusText);
-            //         }
-            //         return response.json();
-            //     })
-            //     .then((data) => {
-            //         console.log(data);
-            //         // Handle server response
-            //     })
-            //     .catch((error) => {
-            //         console.log(error);
-            //         // Handle error
-            //     });
         }
     };
 
