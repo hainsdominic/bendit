@@ -45,7 +45,7 @@ The client is responsible for the user interface and the user interaction with t
 
 Here, Alice wants to send a file to Bob. The app already generated their RSA private and public keys.
 
-![schema](resources/schema.jpg)
+![schema](https://github.com/hainsdominic/bendit/blob/main/resources/schema.jpg?raw=true)
 
 The first thing the peers do is make sure they're IP is known by the node and that it can be resolved by another peer later. This is done by the `add_peer` RPC.
 
