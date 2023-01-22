@@ -77,10 +77,7 @@ fn file_reception_loop(mut stream: TcpStream) {
 
     stream.read(&mut buffer).unwrap();
 
-    // Get the public key from the client
     let message = String::from_utf8_lossy(&buffer[..]).to_string();
-
-    // println!("message: {}", message);
 
     let public_key = message.split("\r1\n\r\n").next().unwrap().to_string();
     println!("public_key: {}", public_key);
@@ -89,7 +86,6 @@ fn file_reception_loop(mut stream: TcpStream) {
         .read_to_string(&mut file_name)
         .expect("Error reading file name");
     file_name = file_name.trim().to_string();
-    // println!("file_name: {}", file_name);
 
     let path = Path::new("../downloads").join(&file_name);
     println!("path: {}", path.display());
