@@ -37,7 +37,11 @@ fn main() {
 
     preload();
     tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![get_recipient_ip, get_blocks, send_file])
+        .invoke_handler(tauri::generate_handler![
+            get_recipient_ip,
+            get_blocks,
+            send_file
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -70,17 +74,26 @@ fn get_public_key() -> String {
 fn file_reception_loop(mut stream: TcpStream) {
     let mut buffer = [0; 2_000_000];
 
+    stream.read(&mut buffer).unwrap();
+
     // Get the public key from the client
-    let mut client_public_key_str = String::new();
-    stream.read_to_string(&mut client_public_key_str).expect("Error reading public client key");
+    let message = String::from_utf8_lossy(&buffer[..]).to_string();
 
-    println!("Client public key: {}", &client_public_key_str);
+    // println!("message: {}", message);
 
-    let mut file_name = String::new();
-    stream.read_to_string(&mut file_name).expect("Error reading file name");
+    let public_key = message.split("\r1\n\r\n").next().unwrap().to_string();
+    println!("public_key: {}", public_key);
+    let mut file_name = message.split("\r1\n\r\n").nth(1).unwrap().to_string();
+    stream
+        .read_to_string(&mut file_name)
+        .expect("Error reading file name");
     file_name = file_name.trim().to_string();
+    println!("file_name: {}", file_name);
 
-    let mut file = match File::create(file_name) {
+    let path = Path::new("../downloads").join(&file_name);
+    println!("path: {}", path.display());
+
+    let mut file = match File::create(&path) {
         Ok(file) => file,
         Err(e) => {
             println!("Error creating file: {}", e);
@@ -88,35 +101,28 @@ fn file_reception_loop(mut stream: TcpStream) {
         }
     };
 
-    // Read file data from the client and write it to the file
-    while let Ok(bytes_read) = stream.read(&mut buffer) {
-        if bytes_read == 0 {
-            break;
-        }
-        match file.write_all(&buffer[..bytes_read]) {
-            Ok(_) => (),
-            Err(e) => {
-                println!("Error writing to file: {}", e);
-                return;
-            }
-        }
+    let file_data = message.split("\r1\n\r\n").nth(2).unwrap().to_string();
+
+    match file.write_all(file_data.as_bytes()) {
+        Err(why) => panic!("couldn't write to {}: {}", file_name, why),
+        Ok(_) => println!("successfully wrote to {}", file_name),
     }
 
     println!("File has been received.");
 }
 
-
 #[tauri::command]
 fn send_file(ip: String, file_buffer: Vec<u8>, file_name: String) {
-    println!("{}", &ip);
-    let mut stream = match TcpStream::connect("localhost:8080") {
+    let ip = ip.split(":").next().unwrap();
+    let ip = ip.trim_end_matches(char::from(0));
+    let mut stream = match TcpStream::connect(ip.to_string() + ":8080") {
         Ok(stream) => stream,
         Err(e) => {
-            println!("Error connecting to server: {}", e);
+            println!("Error connecting to server {}: {}", ip, e);
             return;
         }
-    };    
-    let public_key = get_public_key();
+    };
+    let public_key = get_public_key().to_string() + "\r1\n\r\n";
     println!("Public key");
     match stream.write(public_key.as_bytes()) {
         Ok(_) => (),
@@ -126,6 +132,7 @@ fn send_file(ip: String, file_buffer: Vec<u8>, file_name: String) {
         }
     }
     println!("File name");
+    let file_name = file_name + "\r1\n\r\n";
     match stream.write(file_name.as_bytes()) {
         Ok(_) => (),
         Err(e) => {
@@ -141,9 +148,17 @@ fn send_file(ip: String, file_buffer: Vec<u8>, file_name: String) {
             return;
         }
     }
+
+    match stream.write("\r1\n\r\n".as_bytes()) {
+        Ok(_) => (),
+        Err(e) => {
+            println!("Error sending file buffer: {}", e);
+            return;
+        }
+    }
+
     println!("File has been sent.");
 }
-
 
 // call a tcp server
 #[tauri::command]
