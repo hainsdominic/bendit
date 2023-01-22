@@ -89,7 +89,7 @@ fn file_reception_loop(mut stream: TcpStream) {
         .read_to_string(&mut file_name)
         .expect("Error reading file name");
     file_name = file_name.trim().to_string();
-    println!("file_name: {}", file_name);
+    // println!("file_name: {}", file_name);
 
     let path = Path::new("../downloads").join(&file_name);
     println!("path: {}", path.display());
@@ -126,10 +126,10 @@ fn get_download_files() -> Vec<String> {
 
 #[tauri::command]
 fn send_file(ip: String, file_buffer: Vec<u8>, file_name: String) {
-    // let ip = ip.split(":").next().unwrap();
-    // let ip = ip.trim_end_matches(char::from(0));
+    let ip = ip.split(":").next().unwrap();
+    let ip = ip.trim_end_matches(char::from(0));
     let mut stream = match TcpStream::connect(ip.to_string() + ":8080") {
-        // let mut stream = match TcpStream::connect("192.168.11.200".to_string() + ":8080") {
+        // let mut stream = match TcpStream::connect("192.168.11.183".to_string() + ":8080") {
         Ok(stream) => stream,
         Err(e) => {
             println!("Error connecting to server {}: {}", ip, e);
