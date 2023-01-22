@@ -13,12 +13,12 @@ use std::{
     path::Path,
 };
 
-const NODE_IP: &str = "localhost:5000";
+const NODE_IP: &str = "192.168.11.76:5000";
 
 fn main() {
     println!("Listening for incoming connections...");
 
-    let listener = TcpListener::bind("localhost:8080").unwrap();
+    let listener = TcpListener::bind("192.168.11.183:8080").unwrap();
 
     thread::spawn(move || {
         for stream in listener.incoming() {
@@ -40,7 +40,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_recipient_ip,
             get_blocks,
-            send_file
+            send_file,
+            get_download_files
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -112,10 +113,23 @@ fn file_reception_loop(mut stream: TcpStream) {
 }
 
 #[tauri::command]
+fn get_download_files() -> Vec<String> {
+    let path = Path::new("../downloads");
+    let mut files = Vec::new();
+    for entry in fs::read_dir(path).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        files.push(path.display().to_string());
+    }
+    files
+}
+
+#[tauri::command]
 fn send_file(ip: String, file_buffer: Vec<u8>, file_name: String) {
-    let ip = ip.split(":").next().unwrap();
-    let ip = ip.trim_end_matches(char::from(0));
+    // let ip = ip.split(":").next().unwrap();
+    // let ip = ip.trim_end_matches(char::from(0));
     let mut stream = match TcpStream::connect(ip.to_string() + ":8080") {
+        // let mut stream = match TcpStream::connect("192.168.11.200".to_string() + ":8080") {
         Ok(stream) => stream,
         Err(e) => {
             println!("Error connecting to server {}: {}", ip, e);
