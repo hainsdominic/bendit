@@ -57,19 +57,19 @@ const SendFile = () => {
             let ip: string;
             invoke('get_recipient_ip', { publicKey: publicKey }).then(
                 (res: any) => {
-                    ip = res;
+                    ip = res.replace(/(\r\n|\n|\r)/gm, '') + ':8080';
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const arrayBuffer = reader.result;
+                        invoke('send_file', {
+                            ip: ip,
+                            fileBuffer: arrayBuffer?.toString(),
+                            fileName: (file as File).name,
+                        });
+                    };
+                    reader.readAsArrayBuffer(file);
                 }
             );
-            const reader = new FileReader();
-            reader.onload = () => {
-                reader.readAsArrayBuffer(file);
-                const arrayBuffer = reader.result;
-                console.log(arrayBuffer);
-                invoke('send_file', {
-                    ip: ip,
-                    file: arrayBuffer,
-                });
-            };
         }
     };
 

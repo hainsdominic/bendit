@@ -22,9 +22,10 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
     
-    let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
+    let listener = TcpListener::bind("localhost:5060").unwrap();
 
     thread::spawn(move || {
+        println!("Listening for incoming connections...");
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {
@@ -102,8 +103,17 @@ fn file_reception_loop(mut stream: TcpStream) {
 }
 
 #[tauri::command]
-fn send_file(ip: String, fileBuffer: &str) {
-    println!("{}", fileBuffer);
+fn send_file(ip: String, file_buffer: String, file_name: String) {
+    println!("{}", &ip);
+    let mut stream = TcpStream::connect("localhost:5060").unwrap();
+    let public_key = get_public_key();
+    println!("Public key");
+    stream.write(public_key.as_bytes()).unwrap();
+    println!("File name");
+    stream.write(file_name.as_bytes()).unwrap();
+    println!("File buffer");
+    stream.write(file_buffer.as_bytes()).unwrap();
+    println!("File has been sent.");
 }
 
 
