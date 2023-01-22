@@ -14,7 +14,7 @@ Someone wants a file you, the sender, have. They send you a key (an address), an
 
 There are two main components to the system: the bendit app and the sendit app.
 
-### sendit - The blockchain node
+### sendit - the blockchain node
 
 The sendit app is a blockchain node that serves 2 purposes:
 
@@ -39,6 +39,32 @@ The blockchain block structure is as follows:
 
 It is also responsible for managing the state of the blockchain, it adds new blocks and queues pending file transfer confirmations to the blockchain and it also resolves conflicts between the blockchain of different nodes.
 
-### bendit - The client
+### bendit - the client
 
 The client is responsible for the user interface and the user interaction with the blockchain. It is also responsible for the file transfer and the file encryption.
+
+Here, Alice wants to send a file to Bob. The app already generated their RSA private and public keys.
+
+![schema](resources/schema.jpg)
+
+The first thing the peers do is make sure they're IP is known by the node and that it can be resolved by another peer later. This is done by the `add_peer` RPC.
+
+Using the public key of Bob, Alice resolves Bob's IP address using the `get_peer` RPC.
+
+Alice then encrypts the file using Bob's public key.
+
+Using Bob's IP address, Alice sends the encrypted file straight to Bob using the `send_file` RPC.
+
+Alice concurrently signs the encrypted file using her private key and sends the signature to the node by creating a new block, sending the file hash, the receiver public key, the sender public key and the signature to the node using the `add_block` RPC.
+
+Bob thens mine the block and adds it to the blockchain.
+
+The mining operation verify that the signature is valid and that the file hash is correct. If it is, the block is added to the blockchain.
+
+### technical limits of this project
+
+This project is a proof of concept implemented for a hackathon and is not meant to be used in production. It has a lot of limitations:
+
+- The nodes do not sync with each other yet. This means that if a node goes offline, the blockchain will be offline.
+
+- The file size is capped because of the buffer size of the RPC. This means that the file size is limited. Experimentally, the file size is limited to 1MB.
