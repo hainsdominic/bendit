@@ -3,33 +3,36 @@
     windows_subsystem = "windows"
 )]
 
-use std::{net::TcpStream, io::{Read, Write}};
+use std::{
+    io::{Read, Write},
+    net::TcpStream,
+};
 
 const NODE_IP: &str = "localhost:5000";
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![say_hello])
         .invoke_handler(tauri::generate_handler![get_reciepient_ip])
+        .invoke_handler(tauri::generate_handler![get_blocks])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
-#[tauri::command]
-fn say_hello() {
-    println!("Hello from Rust!");
+fn send_command(command: &str) -> String {
+    let mut stream = TcpStream::connect(NODE_IP).unwrap();
+    let mut buf = [0; 1024 * 10];
+    stream.write(command.as_bytes()).unwrap();
+    stream.read(&mut buf).unwrap();
+    String::from_utf8_lossy(&buf[..]).to_string()
 }
 
-// call a tcp server
 #[tauri::command]
 fn get_reciepient_ip(public_key: &str) -> String {
-    let mut stream = TcpStream::connect(NODE_IP).unwrap();
-    let mut buf = [0; 1024];
     let message = "get_peer ".to_string() + public_key;
-    stream.write(message.as_bytes()).unwrap();
-    stream.read(&mut buf).unwrap();
-    println!("Received: {}", String::from_utf8_lossy(&buf[..]));
-
-    return String::from_utf8_lossy(&buf[..]).to_string();
+    send_command(&message)
 }
 
+#[tauri::command]
+fn get_blocks() -> String {
+    send_command("get_blocks")
+}
